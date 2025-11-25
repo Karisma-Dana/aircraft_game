@@ -9,12 +9,27 @@ BACKGROUND = scale_image(pygame.image.load("imgs/angkasa.png"), 0.8)
 PLANE_1 = pygame.image.load("imgs/jet_1.png")
 PLANE_2 = scale_image(pygame.image.load("imgs/jet_2.png"), 0.2)
 BULLET = scale_image(pygame.image.load("imgs/bullet.png"), 0.1)
+ALIEN_1 = scale_image(pygame.image.load("imgs/alien(1).png"),0.15)
+
 
 # MAKE A wincow for game
 WIDTH, HEIGHT = BACKGROUND.get_width(), BACKGROUND.get_height()
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("aircraf war")
 FPS = 60
+
+pygame.mixer.init()
+
+
+# load music :
+pygame.mixer.music.load("music/basic_gun.mp3")
+
+
+# chanel music 
+basic_gun_music = pygame.mixer.Channel(0)
+
+
+
 
 
 class aircraft:
@@ -68,6 +83,7 @@ class bullet:
         x = self.player.x + self.player.width / 2 - self.bullet_img.get_width() / 2
         y = self.player.y
         self.bullets.append([x, y])
+        basic_gun_music.play(pygame.mixer.Sound("music/basic_gun.mp3"), loops= 0)
 
 
     def update_bullets(self):
@@ -83,6 +99,21 @@ class bullet:
 
 
 
+
+
+class Alien:
+    def __init__(self,img,vel):
+        self.vel = 0
+        self.img = img
+        self.width = self.img.get_width()
+        self.height = self.img.get_height()
+
+
+    def draw (self,position,win):
+        for x,y in position:
+            win.blit(self.img,(x,y))
+
+        
     
 
 # def spawn_bullet(player):
@@ -109,6 +140,7 @@ def draw(win, images, player_aircraft):
 
     player_aircraft.draw(WIN)
     player_bullet.draw_bullets()
+    alien.draw(alien_pos,WIN)
     pygame.display.update()
 
 
@@ -119,9 +151,17 @@ clock = pygame.time.Clock()
 images = [
     (BACKGROUND, (0, 0)),
 ]
+
+alien_pos = [
+    [50,50],
+    [120,200]
+]
+
+
 player = player_aircraft(6)
+alien = Alien(ALIEN_1,0)
 last_bullet_time = 0
-bullet_delay = 200
+bullet_delay = 100
 player_bullet = bullet(WIN,player,BULLET)
 while run:
   
@@ -129,6 +169,7 @@ while run:
     current_time = pygame.time.get_ticks()
 
     draw(WIN, images, player)
+
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
