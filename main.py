@@ -8,7 +8,9 @@ from utils import scale_image, blit_rotate_center
 BACKGROUND = scale_image(pygame.image.load("imgs/angkasa.png"), 0.8)
 PLANE_1 = pygame.image.load("imgs/jet_1.png")
 PLANE_2 = scale_image(pygame.image.load("imgs/jet_2.png"), 0.2)
+MASK_PLANE_2 = pygame.mask.from_surface(PLANE_2)
 BULLET = scale_image(pygame.image.load("imgs/bullet.png"), 0.1)
+MASK_BULLET = pygame.mask.from_surface(BULLET)
 ALIEN_1 = scale_image(pygame.image.load("imgs/alien(1).png"),0.15)
 
 
@@ -98,40 +100,41 @@ class bullet:
             self.win.blit(BULLET, (x, y))
 
 
+    def bullet_hit(self,hit):
+        self.bullets.remove(hit)
+
+
 
 
 
 class Alien:
-    def __init__(self,img,vel):
+    def __init__(self,img,vel,position):
         self.vel = 0
         self.img = img
         self.width = self.img.get_width()
         self.height = self.img.get_height()
+        self.position = position
 
 
-    def draw (self,position,win):
-        for x,y in position:
+    def draw (self,win):
+        for x,y in self.position:
             win.blit(self.img,(x,y))
 
-        
-    
-
-# def spawn_bullet(player):
-#     x = player.x + player.width / 2 - BULLET.get_width() / 2
-#     y = player.y
-#     bullets.append([x, y])
 
 
-# def update_bullets():
-#     for b in bullets:
-#         b[1] -= 10
-
-#     bullets[:] = [b for b in bullets if b[1] > -50]
 
 
-# def draw_bullets(win):
-#     for x, y in bullets:
-#         win.blit(BULLET, (x, y))
+    def collide(self,mask, x = 0, y = 0):
+        alien_mask = pygame.mask.from_surface(self.img)
+
+        for alien_x, alien_y in self.position:
+            offset = (int(alien_x - x), int(alien_y - y))
+            poi = mask.overlap(alien_mask,offset)
+
+            if poi :
+                return(poi)
+        return None
+      
 
 
 def draw(win, images, player_aircraft):
@@ -140,42 +143,11 @@ def draw(win, images, player_aircraft):
 
     player_aircraft.draw(WIN)
     player_bullet.draw_bullets()
-    alien.draw(alien_pos,WIN)
+    alien.draw(WIN)
     pygame.display.update()
 
-
-
-run = True
-clock = pygame.time.Clock()
-
-images = [
-    (BACKGROUND, (0, 0)),
-]
-
-alien_pos = [
-    [50,50],
-    [120,200]
-]
-
-
-player = player_aircraft(6)
-alien = Alien(ALIEN_1,0)
-last_bullet_time = 0
-bullet_delay = 100
-player_bullet = bullet(WIN,player,BULLET)
-while run:
-  
-    clock.tick(FPS)
+def move (player,last_bullet_time,bullet_delay):
     current_time = pygame.time.get_ticks()
-
-    draw(WIN, images, player)
-
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            run = False
-            break
-
     keys = pygame.key.get_pressed()
 
     if keys[pygame.K_a]:
@@ -190,8 +162,59 @@ while run:
         player_bullet.spawn_bullet(player)
         last_bullet_time = current_time
 
+    return last_bullet_time
 
+
+
+
+
+run = True
+clock = pygame.time.Clock()
+
+images = [
+    (BACKGROUND, (0, 0))
+]
+
+alien_pos = [
+    [50,50],
+    [120,200]
+]
+
+
+player = player_aircraft(6)
+alien = Alien(ALIEN_1,0,alien_pos)
+player_bullet = bullet(WIN,player,BULLET)
+
+last_bullet_time = 0
+bullet_delay = 100
+
+while run:
+  
+    clock.tick(FPS)
+    current_time = pygame.time.get_ticks()
+
+    draw(WIN, images, player)
+
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+            break
+
+    
+    last_bullet_time = move(player,last_bullet_time,bullet_delay)
     player_bullet.update_bullets()
 
+
+    
+    for bx, by in player_bullet.bullets:
+        if alien.collide(MASK_BULLET, bx, by) :
+            print("kena nih")
+            remove = [bx,by]
+            player_bullet.bullet_hit(remove)
+            
+                       
+    if alien.collide(MASK_PLANE_2,player.x,player.y):
+        print("kena nih")
 
 pygame.quit()
