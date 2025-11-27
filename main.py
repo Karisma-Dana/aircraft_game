@@ -1,6 +1,7 @@
 import pygame
 import math
 import time
+import random
 from utils import scale_image, blit_rotate_center
 
 
@@ -17,6 +18,7 @@ ALIEN_1 = scale_image(pygame.image.load("imgs/alien(1).png"),0.15)
 # MAKE A wincow for game
 WIDTH, HEIGHT = BACKGROUND.get_width(), BACKGROUND.get_height()
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
+print(WIDTH)
 pygame.display.set_caption("aircraf war")
 FPS = 60
 
@@ -25,10 +27,12 @@ pygame.mixer.init()
 
 # load music :
 pygame.mixer.music.load("music/basic_gun.mp3")
+pygame.mixer.music.load("music/bullet_hit.mp3")
 
 
 # chanel music 
 basic_gun_music = pygame.mixer.Channel(0)
+bullet_hit_music = pygame.mixer.Channel(1)
 
 
 
@@ -102,23 +106,44 @@ class bullet:
 
     def bullet_hit(self,hit):
         self.bullets.remove(hit)
+        bullet_hit_music.play(pygame.mixer.Sound("music/bullet_hit.mp3"),loops=0)
 
 
 
 
 
 class Alien:
-    def __init__(self,img,vel,position):
-        self.vel = 0
+    def __init__(self,img,vel,alien_count):
+        self.vel = vel
         self.img = img
+        self.alien_count = alien_count
         self.width = self.img.get_width()
         self.height = self.img.get_height()
-        self.position = position
+
+        print(self.width)
+        self.position = self.alien_position(alien_count)
+
+    def move(self):
+        for y in self.position:
+            y[1] += self.vel
+        
+        self.position[:] = [pos for pos in self.position if pos[1] < HEIGHT]
 
 
     def draw (self,win):
         for x,y in self.position:
             win.blit(self.img,(x,y))
+
+    def alien_position(self,alien_number):
+        alien_pos = []
+        for i in range(alien_number):
+            y_pos = (0 - self.height)
+            x_random = random.randint(int(0+self.width),int(819-self.width))
+            y_random = random.randint(int(-10000),int(0 - self.height))
+
+            alien_pos.append([x_random,y_random])
+
+        return alien_pos
 
 
 
@@ -165,6 +190,14 @@ def move (player,last_bullet_time,bullet_delay):
     return last_bullet_time
 
 
+def alien_position(alien_number,alien):
+    alien_pos = []
+    for i in range(alien_number):
+        y_pos = (0 - alien.height)
+        x_random = random.randint(int(0+alien.width),int(819-alien.width))
+        alien_pos.append([x_random,y_pos])
+
+    return alien_pos
 
 
 
@@ -175,18 +208,22 @@ images = [
     (BACKGROUND, (0, 0))
 ]
 
-alien_pos = [
-    [50,50],
-    [120,200]
-]
+
+
+
+
 
 
 player = player_aircraft(6)
-alien = Alien(ALIEN_1,0,alien_pos)
+alien = Alien(ALIEN_1,1.3,5)
 player_bullet = bullet(WIN,player,BULLET)
 
 last_bullet_time = 0
 bullet_delay = 100
+
+
+# alien_pos= alien_position(2,alien)
+
 
 while run:
   
@@ -204,6 +241,7 @@ while run:
     
     last_bullet_time = move(player,last_bullet_time,bullet_delay)
     player_bullet.update_bullets()
+    alien.move()
 
 
     
