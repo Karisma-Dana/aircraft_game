@@ -47,6 +47,7 @@ class aircraft:
         self.x, self.y = self.START_POS
         self.width = self.img.get_width()
         self.height = self.img.get_height()
+        self.hp = 300
 
     def draw(self, win):
         win.blit(self.img, (self.x, self.y))
@@ -67,15 +68,13 @@ class aircraft:
         if self.y + self.height > HEIGHT:
             self.y = HEIGHT - self.height
 
+    def get_hit(self):
+        pass
+
 
 class player_aircraft(aircraft):
     IMG = PLANE_2
     START_POS = (350, 630)
-
-
-
-
-
 
 
 class bullet:
@@ -108,10 +107,6 @@ class bullet:
         self.bullets.remove(hit)
         bullet_hit_music.play(pygame.mixer.Sound("music/bullet_hit.mp3"),loops=0)
 
-
-
-
-
 class Alien:
     def __init__(self,img,vel,alien_count):
         self.vel = vel
@@ -139,15 +134,11 @@ class Alien:
         for i in range(alien_number):
             y_pos = (0 - self.height)
             x_random = random.randint(int(0+self.width),int(819-self.width))
-            y_random = random.randint(int(-10000),int(0 - self.height))
+            y_random = random.randint(int(-1000),int(0 - self.height))
 
             alien_pos.append([x_random,y_random])
 
         return alien_pos
-
-
-
-
 
     def collide(self,mask, x = 0, y = 0):
         alien_mask = pygame.mask.from_surface(self.img)
@@ -190,16 +181,6 @@ def move (player,last_bullet_time,bullet_delay):
     return last_bullet_time
 
 
-def alien_position(alien_number,alien):
-    alien_pos = []
-    for i in range(alien_number):
-        y_pos = (0 - alien.height)
-        x_random = random.randint(int(0+alien.width),int(819-alien.width))
-        alien_pos.append([x_random,y_pos])
-
-    return alien_pos
-
-
 
 run = True
 clock = pygame.time.Clock()
@@ -210,20 +191,12 @@ images = [
 
 
 
-
-
-
-
 player = player_aircraft(6)
-alien = Alien(ALIEN_1,1.3,5)
+alien = Alien(ALIEN_1,1,5)
 player_bullet = bullet(WIN,player,BULLET)
 
 last_bullet_time = 0
 bullet_delay = 100
-
-
-# alien_pos= alien_position(2,alien)
-
 
 while run:
   
