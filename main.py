@@ -166,8 +166,6 @@ def move (player,last_bullet_time,bullet_delay):
 
 
 
-
-
 run = True
 clock = pygame.time.Clock()
 
@@ -213,7 +211,6 @@ while run:
             remove = [bx,by]
             player_bullet.bullet_hit(remove)
             
-                       
     if alien.collide(MASK_PLANE_2,player.x,player.y):
         print("kena nih")
 
