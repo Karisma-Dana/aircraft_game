@@ -53,7 +53,6 @@ class aircraft:
         win.blit(self.img, (self.x, self.y))
 
     def move(self, dx, dy):
-        print(self.x, self.y)
 
         self.x += dx
         self.y += dy
@@ -78,11 +77,12 @@ class player_aircraft(aircraft):
 
 
 class bullet:
-    def __init__(self,win, player, bullet):
+    def __init__(self,win, player, bullet, damage = 1):
         self.bullets = []
         self.win = win
         self.player = player
         self.bullet_img = bullet
+        self.damage = damage
     
     def spawn_bullet(self,player):
         x = self.player.x + self.player.width / 2 - self.bullet_img.get_width() / 2
@@ -114,9 +114,9 @@ class Alien:
         self.alien_count = alien_count
         self.width = self.img.get_width()
         self.height = self.img.get_height()
-
-        print(self.width)
         self.position = self.alien_position(alien_count)
+        print(f"alien position varibale {self.position}")
+        self.hp = [3 for _ in range(self.alien_count)]
 
     def move(self):
         for y in self.position:
@@ -143,17 +143,35 @@ class Alien:
     def collide(self,mask, x = 0, y = 0):
         alien_mask = pygame.mask.from_surface(self.img)
 
-        for alien_x, alien_y in self.position:
+        for index, (alien_x, alien_y) in enumerate(self.position):
             offset = (int(alien_x - x), int(alien_y - y))
             poi = mask.overlap(alien_mask,offset)
+            alien_hit_pos = [alien_x,alien_y]
 
             if poi :
-                return(poi)
+                return([poi,alien_hit_pos,index])
         return None
+    
+
+    def get_hit(self, damage, alien_collide):
+        position_hit = alien_collide[1]
+        alien_hit_pos = alien_collide[2]
+
+        if self.hp[alien_hit_pos] == 0:
+            self.hp.pop(alien_hit_pos)
+            self.position.remove(position_hit)
+
+        else:
+            self.hp[alien_hit_pos] -= damage
+
+        print(f"list hp alien {self.hp}")
+
+
+
       
 
 
-def draw(win, images, player_aircraft):
+def draw(win, images, player_aircraft,alien):
     for img, pos in images:
         win.blit(img, pos)
 
@@ -203,7 +221,7 @@ while run:
     clock.tick(FPS)
     current_time = pygame.time.get_ticks()
 
-    draw(WIN, images, player)
+    draw(WIN, images, player,alien)
 
 
     for event in pygame.event.get():
@@ -219,10 +237,11 @@ while run:
 
     
     for bx, by in player_bullet.bullets:
-        if alien.collide(MASK_BULLET, bx, by) :
-            print("kena nih")
-            remove = [bx,by]
+        alien_collide = alien.collide(MASK_BULLET,bx, by)
+        if alien_collide :
+            remove = [bx,by]     
             player_bullet.bullet_hit(remove)
+            alien.get_hit(player_bullet.damage,alien_collide)
             
     if alien.collide(MASK_PLANE_2,player.x,player.y):
         print("kena nih")
