@@ -18,11 +18,12 @@ ALIEN_1 = scale_image(pygame.image.load("imgs/alien(1).png"),0.15)
 # MAKE A wincow for game
 WIDTH, HEIGHT = BACKGROUND.get_width(), BACKGROUND.get_height()
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
-print(WIDTH)
+print(WIDTH,HEIGHT)
 pygame.display.set_caption("aircraf war")
 FPS = 60
 
 pygame.mixer.init()
+pygame.font.init()
 
 
 # load music :
@@ -34,6 +35,17 @@ pygame.mixer.music.load("music/bullet_hit.mp3")
 basic_gun_music = pygame.mixer.Channel(0)
 bullet_hit_music = pygame.mixer.Channel(1)
 
+
+# define color 
+GREEN_NEON = (0, 255, 156)
+BLACK = (0,0,0)
+BLUE = (0,0,128)
+
+TEXT_DICT = {
+    "hp" : (WIDTH //2, HEIGHT -30),
+    "bullet" : (WIDTH //3, HEIGHT -30),
+    "level" : ((WIDTH // 3) * 2,HEIGHT - 30)
+}
 
 
 
@@ -172,12 +184,6 @@ class Alien:
             self.position.remove(position_hit)
                     
 
-
-
-
-      
-
-
 def draw(win, images, player_aircraft,alien):
     for img, pos in images:
         win.blit(img, pos)
@@ -185,6 +191,7 @@ def draw(win, images, player_aircraft,alien):
     player_aircraft.draw(WIN)
     player_bullet.draw_bullets()
     alien.draw(WIN)
+    info_text(TEXT_DICT,alien,player,player_bullet)
     pygame.display.update()
 
 def move (player,last_bullet_time,bullet_delay):
@@ -204,6 +211,31 @@ def move (player,last_bullet_time,bullet_delay):
         last_bullet_time = current_time
 
     return last_bullet_time
+
+def info_text(position_dict,alien = None ,aircraft = None,bullet = None,):
+    font = pygame.font.Font('font/ARCADECLASSIC.TTF', 30)
+    if aircraft :
+        # for hp aircraft / hp player
+        hp_aircraft_text = f"HP  {aircraft.hp}"
+        hp_render = font.render(hp_aircraft_text,True,GREEN_NEON,BLUE)
+        text_hp_rect = hp_render.get_rect()
+        text_hp_rect.center = position_dict["hp"]
+        WIN.blit(hp_render,text_hp_rect)
+    if bullet:
+        # for damage level bullet 
+        damage_bullet_text = f"DAMAGE  {bullet.damage}"
+        damage_bullet_render = font.render(damage_bullet_text,True,GREEN_NEON,BLUE)
+        text_damage_rect = damage_bullet_render.get_rect()
+        text_damage_rect.center = position_dict["bullet"]
+        WIN.blit(damage_bullet_render,text_damage_rect)
+
+    if alien:
+
+        level_text = f"LEVEL {"1"}"
+        level_render = font.render(level_text,True,GREEN_NEON,BLUE)
+        level_rect = level_render.get_rect()
+        level_rect.center = position_dict["level"]
+        WIN.blit(level_render,level_rect)
 
 
 
@@ -260,6 +292,5 @@ while run:
         alien.get_hit(aircraft_current_hp,alien_collide_aircraft)
         if player_status == "end":
             run = False
-            
 
 pygame.quit()
