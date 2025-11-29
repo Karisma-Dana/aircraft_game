@@ -47,7 +47,7 @@ class aircraft:
         self.x, self.y = self.START_POS
         self.width = self.img.get_width()
         self.height = self.img.get_height()
-        self.hp = 300
+        self.hp = 7
 
     def draw(self, win):
         win.blit(self.img, (self.x, self.y))
@@ -67,8 +67,12 @@ class aircraft:
         if self.y + self.height > HEIGHT:
             self.y = HEIGHT - self.height
 
-    def get_hit(self):
-        pass
+    def get_hit(self, enemy_info,alien):
+        alien_index_hp = enemy_info[2]
+        self.hp -= alien.hp[alien_index_hp]
+        if self.hp <= 0 :
+            return ("end")
+
 
 
 class player_aircraft(aircraft):
@@ -157,14 +161,17 @@ class Alien:
         position_hit = alien_collide[1]
         alien_hit_pos = alien_collide[2]
 
-        if self.hp[alien_hit_pos] == 0:
+        # if self.hp[alien_hit_pos] == 0:
+        #     self.hp.pop(alien_hit_pos)
+        #     self.position.remove(position_hit)
+
+        
+        self.hp[alien_hit_pos] -= damage
+        if self.hp[alien_hit_pos] <= 0 :
             self.hp.pop(alien_hit_pos)
             self.position.remove(position_hit)
+                    
 
-        else:
-            self.hp[alien_hit_pos] -= damage
-
-        print(f"list hp alien {self.hp}")
 
 
 
@@ -197,6 +204,8 @@ def move (player,last_bullet_time,bullet_delay):
         last_bullet_time = current_time
 
     return last_bullet_time
+
+
 
 
 
@@ -237,13 +246,20 @@ while run:
 
     
     for bx, by in player_bullet.bullets:
-        alien_collide = alien.collide(MASK_BULLET,bx, by)
-        if alien_collide :
+        alien_collide_bullet = alien.collide(MASK_BULLET,bx, by)
+        
+        if alien_collide_bullet :
             remove = [bx,by]     
             player_bullet.bullet_hit(remove)
-            alien.get_hit(player_bullet.damage,alien_collide)
-            
+            alien.get_hit(player_bullet.damage,alien_collide_bullet)
+
+    alien_collide_aircraft = alien.collide(MASK_PLANE_2,player.x,player.y)
     if alien.collide(MASK_PLANE_2,player.x,player.y):
-        print("kena nih")
+        aircraft_current_hp = player.hp
+        player_status = player.get_hit(alien_collide_aircraft,alien)
+        alien.get_hit(aircraft_current_hp,alien_collide_aircraft)
+        if player_status == "end":
+            run = False
+            
 
 pygame.quit()
