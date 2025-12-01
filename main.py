@@ -9,9 +9,9 @@ from utils import scale_image, blit_rotate_center
 BACKGROUND = scale_image(pygame.image.load("imgs/angkasa.png"), 0.8)
 PLANE_1 = pygame.image.load("imgs/jet_1.png")
 PLANE_2 = scale_image(pygame.image.load("imgs/jet_2.png"), 0.2)
-MASK_PLANE_2 = pygame.mask.from_surface(PLANE_2)
 BULLET = scale_image(pygame.image.load("imgs/bullet.png"), 0.1)
 MASK_BULLET = pygame.mask.from_surface(BULLET)
+MASK_PLANE_2 = pygame.mask.from_surface(PLANE_2)
 ALIEN_1 = scale_image(pygame.image.load("imgs/alien(1).png"),0.15)
 
 
@@ -79,11 +79,24 @@ class aircraft:
         if self.y + self.height > HEIGHT:
             self.y = HEIGHT - self.height
 
-    def get_hit(self, enemy_info,alien):
-        alien_index_hp = enemy_info[2]
-        self.hp -= alien.hp[alien_index_hp]
+    def get_hit(self, damage):
+
+        self.hp -= damage
         if self.hp <= 0 :
             return ("end")
+        
+    def collide(self,mask,x,y):
+        MASK_PLANE_2 = pygame.mask.from_surface(self.img)
+        offset = (self.x - x, self.y - y) 
+        poi = mask.overlap(MASK_PLANE_2,offset)
+
+        if poi :
+            return("kena bullet ni")
+        
+        return None
+
+
+
 
 
 
@@ -182,6 +195,63 @@ class Alien:
         if self.hp[alien_hit_pos] <= 0 :
             self.hp.pop(alien_hit_pos)
             self.position.remove(position_hit)
+
+
+class bulletAlien:
+    def __init__(self,win,bulletAlien_img,alien,vel = 3,):
+        
+        self.win = win
+        self.damage = 1
+        self.img = bulletAlien_img
+        self.vel = vel
+        self.alien = alien
+        self.bullets = [[] for _ in range(len(self.alien.position))]
+
+
+
+    def spawn_bullet(self,player):
+        for index, (x,y) in enumerate(self.alien.position):
+            if 0 <= y <= HEIGHT:
+
+                alien_center_x = x + self.alien.width / 2
+                alien_center_y = y + self.alien.height / 2
+
+
+                player_center_x = player.x + player.width/2
+                player_center_y = player.y + player.height/2
+
+                dx = player_center_x - alien_center_x
+                dy = player_center_y - alien_center_y
+
+                angle = math.atan2(dy,dx)
+
+                vx = math.cos(angle) * self.vel
+                vy = math.sin(angle) * self.vel
+
+                self.bullets[index].append([alien_center_x,alien_center_y,vx,vy,angle])
+
+
+    def update_bullet(self):
+        for bullet_list in self.bullets:
+            for b in bullet_list:
+                b[0] += b[2] 
+                b[1] += b[3]
+
+        for i in range(len(self.bullets)):
+            self.bullets[i] = [b for b in self.bullets[i] if b[1] < HEIGHT and 0 <= b[0] <= WIDTH ]
+
+
+
+    def draw_bullets(self):
+        for bullest_list in self.bullets:
+            for x,y,vx,vy,angle in bullest_list:
+                blit_rotate_center(self.win,self.img,(x,y),angle)
+
+    def bullet_hit (self,arry_1,arry_2):
+        del self.bullets[arry_1][arry_2]
+        bullet_hit_music.play(pygame.mixer.Sound("music/bullet_hit.mp3"),loops=0)
+        
+
                     
 
 def draw(win, images, player_aircraft,alien):
@@ -191,6 +261,7 @@ def draw(win, images, player_aircraft,alien):
     player_aircraft.draw(WIN)
     player_bullet.draw_bullets()
     alien.draw(WIN)
+    alien_bullet.draw_bullets()
     info_text(TEXT_DICT,alien,player,player_bullet)
     pygame.display.update()
 
@@ -239,6 +310,8 @@ def info_text(position_dict,alien = None ,aircraft = None,bullet = None,):
 
 
 
+    
+
 
 
 run = True
@@ -253,9 +326,13 @@ images = [
 player = player_aircraft(6)
 alien = Alien(ALIEN_1,1,5)
 player_bullet = bullet(WIN,player,BULLET)
+alien_bullet = bulletAlien(WIN,BULLET,alien,2)
 
 last_bullet_time = 0
+last_bullet_alien = 0
+bullet_delay_alien = 2500
 bullet_delay = 100
+level = 0
 
 while run:
   
@@ -275,6 +352,12 @@ while run:
     player_bullet.update_bullets()
     alien.move()
 
+    if current_time - last_bullet_alien > bullet_delay_alien:
+        alien_bullet.spawn_bullet(player)
+        last_bullet_alien = current_time
+    alien_bullet.update_bullet()
+
+
 
     
     for bx, by in player_bullet.bullets:
@@ -286,11 +369,24 @@ while run:
             alien.get_hit(player_bullet.damage,alien_collide_bullet)
 
     alien_collide_aircraft = alien.collide(MASK_PLANE_2,player.x,player.y)
-    if alien.collide(MASK_PLANE_2,player.x,player.y):
+    if alien_collide_aircraft:
         aircraft_current_hp = player.hp
-        player_status = player.get_hit(alien_collide_aircraft,alien)
+        alien_hit_hp = alien.hp[alien_collide_aircraft[2]]
+        player_status = player.get_hit(alien_hit_hp)
         alien.get_hit(aircraft_current_hp,alien_collide_aircraft)
         if player_status == "end":
             run = False
+
+    for index1,(bullet_list) in enumerate(alien_bullet.bullets):
+        for index2,(x, y, vx, vy, angle) in enumerate(bullet_list):
+            bullet_alien_colide_aircraft = player.collide(MASK_BULLET,x,y)
+            if bullet_alien_colide_aircraft:
+                alien_bullet.bullet_hit(index1,index2)
+                player.get_hit(alien_bullet.damagedd)
+                
+
+
+    
+
 
 pygame.quit()
